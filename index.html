@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>من أنت؟ | التطبيق</title>
+<style>
+  :root { color-scheme: light; --bg:#0f172a; --card:#ffffff; --accent:#2563eb; --muted:#64748b; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: "Segoe UI", Tahoma, Arial, sans-serif; background: linear-gradient(160deg,#0f172a,#1e3a8a 60%,#0ea5e9); min-height:100vh; color:#0f172a; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .card { background: var(--card); border-radius: 20px; max-width: 720px; width:100%; padding: 40px 36px; box-shadow: 0 24px 60px rgba(0,0,0,.35); text-align:center; }
+  .badge { display:inline-block; background:#dbeafe; color:#1d4ed8; font-weight:700; border-radius:999px; padding:6px 18px; margin-bottom:16px; font-size:15px; }
+  h1 { margin:0 0 12px; font-size: clamp(30px, 5vw, 46px); }
+  p.lead { font-size:18px; line-height:1.9; color:#334155; margin:0 0 20px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:12px; margin:24px 0; }
+  .feat { background:#f1f5f9; border-radius:14px; padding:16px; font-size:15px; line-height:1.8; }
+  .feat b { display:block; margin-bottom:4px; }
+  button { background:var(--accent); color:#fff; border:0; border-radius:12px; padding:14px 28px; font-size:18px; font-weight:700; cursor:pointer; }
+  button:hover { background:#1d4ed8; }
+  #answer { margin-top:18px; font-size:17px; line-height:2; background:#eff6ff; border:1px dashed #93c5fd; border-radius:12px; padding:14px; min-height:64px; }
+  footer { margin-top:20px; color:var(--muted); font-size:13px; }
+  @media (max-width:480px){ .card{padding:28px 20px;} p.lead{font-size:16px;} }
+</style>
+</head>
+<body>
+  <main class="card">
+    <span class="badge">التطبيق يجيب</span>
+    <h1>من أنت؟</h1>
+    <p class="lead">أنا تطبيق <b>PlayGround</b> — صفحة تعريفية بسيطة وسريعة تعمل مباشرة من هذا المستودع. أُجيب عن سؤال «من أنت» وأعرض ما أستطيع فعله، بدون أي اعتماديات خارجية.</p>
+    <div class="grid">
+      <div class="feat"><b>⚡ سريع وثابت</b>صفحة ثابتة واحدة تُبنى وتُعرض فورًا على المنفذ 3000.</div>
+      <div class="feat"><b>📱 متجاوب</b>يعمل على الشاشات الكبيرة والجوال، بالعربية وباتجاه RTL.</div>
+      <div class="feat"><b>🔍 تفاعلي</b>اضغط الزر بالأسفل لعرض الإجابة الكاملة حول هويتي.</div>
+    </div>
+    <button id="who" type="button">اعرف من أنا</button>
+    <div id="answer" aria-live="polite">اضغط الزر لعرض الإجابة…</div>
+    <footer>PlayGround · صفحة ثابتة · تُخدم عبر start.sh على PORT 3000</footer>
+  </main>
+<script>
+  document.getElementById('who').addEventListener('click', function () {
+    document.getElementById('answer').textContent =
+      'أنا تطبيق PlayGround: واجهة تعريفية عربية، أعمل كصفحة ثابتة (index.html)، أُخدم في المقدمة عبر start.sh، وألتقط عبر capture.sh على الحاسوب والجوال.';
+  });
+</script>
+</body>
+</html>
