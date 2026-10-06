@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>لياقتي ووقتي | تطبيق الرياضة وتنظيم الوقت</title>
+<meta name="description" content="تطبيق عربي مجاني للرياضة وتنظيم الوقت: تمارين، مؤقت رياضي، مهام، بومودورو، شرب الماء">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f9d58">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg-glow"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">💪</div>
+    <div>
+      <h1>لياقتي ووقتي</h1>
+      <p id="dateLine">—</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button id="themeBtn" class="icon-btn" title="الوضع الليلي">🌙</button>
+    <div class="streak" title="أيام الالتزام">🔥 <span id="streakNum">0</span></div>
+  </div>
+</header>
+
+<main class="container">
+  <!-- الرئيسية -->
+  <section id="page-home" class="page active">
+    <div class="hello card">
+      <h2 id="greeting">أهلاً بك بطل! 👋</h2>
+      <p>“الانضباط اليومي الصغير يصنع فرقاً كبيراً. ابدأ اليوم بتمرين 10 دقائق ومهمة واحدة مهمة.”</p>
+      <div class="hello-input">
+        <input id="userName" placeholder="اكتب اسمك هنا... مثال: أحمد" maxlength="30">
+        <button id="saveName" class="btn primary">حفظ</button>
+      </div>
+    </div>
+
+    <div class="grid4">
+      <div class="stat card"><span class="ico">🏋️</span><b id="statWorkouts">0</b><small>تمارين اليوم</small></div>
+      <div class="stat card"><span class="ico">✅</span><b id="statTasks">0%</b><small>إنجاز المهام</small></div>
+      <div class="stat card"><span class="ico">💧</span><b id="statWater">0/8</b><small>أكواب الماء</small></div>
+      <div class="stat card"><span class="ico">🍅</span><b id="statFocus">0</b><small>دقائق التركيز</small></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>💧 تتبع شرب الماء</h3><button id="resetWater" class="link">تصفير</button></div>
+      <div id="waterCups" class="cups"></div>
+      <p class="hint">هدفك اليومي: 8 أكواب. اضغط على الكوب لتسجيله.</p>
+    </div>
+
+    <div class="grid2">
+      <div class="card quick" data-go="workouts"><span>🏃</span><b>ابدأ تمرين</b><small>مكتبة + خطة يومك</small></div>
+      <div class="card quick" data-go="timer"><span>⏱️</span><b>مؤقت رياضي</b><small>تاباتا HIIT</small></div>
+      <div class="card quick" data-go="tasks"><span>📝</span><b>مهام اليوم</b><small>نظّم وقتك</small></div>
+      <div class="card quick" data-go="focus"><span>🍅</span><b>تركيز بومودورو</b><small>25 دقيقة</small></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>📊 نشاط آخر 7 أيام</h3></div>
+      <canvas id="chart" width="600" height="220"></canvas>
+      <div id="weekLabels" class="week-labels"></div>
+    </div>
+
+    <div class="card quote">
+      <h3>💡 حكمة اليوم</h3>
+      <p id="quoteText"></p>
+      <button id="newQuote" class="btn ghost">حكمة أخرى</button>
+    </div>
+  </section>
+
+  <!-- التمارين -->
+  <section id="page-workouts" class="page">
+    <div class="card">
+      <div class="card-head"><h3>🏋️ مكتبة التمارين</h3></div>
+      <div class="filters">
+        <button class="chip active" data-f="all">الكل</button>
+        <button class="chip" data-f="cardio">كارديو 🔥</button>
+        <button class="chip" data-f="strength">قوة 💪</button>
+        <button class="chip" data-f="flex">مرونة 🧘</button>
+      </div>
+      <div id="exList" class="ex-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>🗓️ خطة تمرين اليوم</h3><button id="clearPlan" class="link">مسح الخطة</button></div>
+      <div id="planList" class="plan-list"><p class="hint">أضف تمارين من المكتبة بالضغط على زر +</p></div>
+      <div class="row">
+        <button id="finishWorkout" class="btn primary flex1">✔️ أنهيت التمرين (تسجيل)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>📜 سجل التمارين</h3><button id="clearHistory" class="link">مسح السجل</button></div>
+      <div id="historyList" class="history"></div>
+    </div>
+  </section>
+
+  <!-- المؤقت الرياضي -->
+  <section id="page-timer" class="page">
+    <div class="card center">
+      <h3>⏱️ المؤقت الرياضي (تاباتا)</h3>
+      <div class="ring-wrap">
+        <svg viewBox="0 0 200 200" class="ring">
+          <circle cx="100" cy="100" r="85" class="ring-bg"/>
+          <circle id="ringFg" cx="100" cy="100" r="85" class="ring-fg"/>
+        </svg>
+        <div class="ring-text"><b id="timerText">30</b><small id="timerPhase">استعد...</small></div>
+      </div>
+      <p class="hint">الجولة <b id="roundText">0 / 8</b> • <span id="timerState">متوقف</span></p>
+      <div class="timer-config">
+        <label>تمرين (ث)<input id="workSec" type="number" value="30" min="5" max="300"></label>
+        <label>راحة (ث)<input id="restSec" type="number" value="10" min="5" max="180"></label>
+        <label>جولات<input id="roundsNum" type="number" value="8" min="1" max="20"></label>
+      </div>
+      <div class="row">
+        <button id="startTimer" class="btn primary flex1">▶️ ابدأ</button>
+        <button id="pauseTimer" class="btn flex1">⏸️ إيقاف مؤقت</button>
+        <button id="resetTimer" class="btn ghost flex1">🔄 تصفير</button>
+      </div>
+      <p class="hint">🔊 ستسمع صوت تنبيه عند كل مرحلة. يعمل حتى مع قفل الشاشة جزئياً.</p>
+    </div>
+  </section>
+
+  <!-- المهام -->
+  <section id="page-tasks" class="page">
+    <div class="card">
+      <div class="card-head"><h3>📝 مهام اليوم</h3><b id="taskProgress">0%</b></div>
+      <div class="progress"><div id="taskBar"></div></div>
+      <form id="taskForm" class="task-form">
+        <input id="taskInput" placeholder="مهمة جديدة... مثال: مذاكرة 30 دقيقة" maxlength="80" required>
+        <div class="row">
+          <input id="taskTime" type="time">
+          <select id="taskPriority">
+            <option value="عالية 🔴">عالية 🔴</option>
+            <option value="متوسطة 🟡" selected>متوسطة 🟡</option>
+            <option value="منخفضة 🟢">منخفضة 🟢</option>
+          </select>
+          <button class="btn primary">➕ إضافة</button>
+        </div>
+      </form>
+      <div id="taskList" class="task-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>🕒 جدول اليوم</h3><button id="clearSchedule" class="link">مسح</button></div>
+      <form id="schedForm" class="task-form">
+        <div class="row">
+          <input id="schedTime" type="time" required>
+          <input id="schedTitle" placeholder="ماذا ستفعل؟ مثال: جري" maxlength="60" required class="flex1">
+          <button class="btn primary">➕</button>
+        </div>
+      </form>
+      <div id="schedList" class="sched-list"></div>
+    </div>
+  </section>
+
+  <!-- التركيز -->
+  <section id="page-focus" class="page">
+    <div class="card center">
+      <h3>🍅 مؤقت التركيز (بومودورو)</h3>
+      <div class="pomodoro" id="pomText">25:00</div>
+      <p class="hint" id="pomPhase">جلسة تركيز • الجلسة رقم 1</p>
+      <div class="row">
+        <button class="btn ghost pom-preset" data-m="15">15د</button>
+        <button class="btn ghost pom-preset active-preset" data-m="25">25د</button>
+        <button class="btn ghost pom-preset" data-m="50">50د</button>
+      </div>
+      <div class="row">
+        <button id="pomStart" class="btn primary flex1">▶️ ابدأ التركيز</button>
+        <button id="pomReset" class="btn flex1">🔄 تصفير</button>
+      </div>
+      <p class="hint">بعد كل جلسة ستحصل على راحة 5 دقائق. كل دقيقة تركيز تُضاف لإحصائياتك.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>🎯 عادات يومية</h3></div>
+      <div id="habitsList" class="habits"></div>
+      <form id="habitForm" class="row">
+        <input id="habitInput" placeholder="عادة جديدة... مثال: نوم مبكر" maxlength="50" class="flex1" required>
+        <button class="btn primary">➕</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<nav class="bottomnav">
+  <button class="nav-btn active" data-page="home"><span>🏠</span><small>الرئيسية</small></button>
+  <button class="nav-btn" data-page="workouts"><span>🏋️</span><small>تمارين</small></button>
+  <button class="nav-btn" data-page="timer"><span>⏱️</span><small>المؤقت</small></button>
+  <button class="nav-btn" data-page="tasks"><span>📝</span><small>مهامي</small></button>
+  <button class="nav-btn" data-page="focus"><span>🍅</span><small>تركيز</small></button>
+</nav>
+
+<script src="app.js"></script>
+</body>
+</html>
