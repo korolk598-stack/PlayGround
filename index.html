@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1a0f0a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>سوب | Soup Catch 3D</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍲</text></svg>">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { width:100%; height:100%; overflow:hidden; overscroll-behavior:none; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial, sans-serif;
+    background:#1a0f0a; color:#fff;
+    touch-action:none; user-select:none; -webkit-user-select:none;
+    position:fixed; inset:0;
+  }
+  #game-canvas { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+  /* HUD */
+  #hud {
+    position:fixed; top:0; left:0; right:0; z-index:10;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:calc(8px + env(safe-area-inset-top)) 12px 8px;
+    pointer-events:none;
+  }
+  .pill {
+    background:rgba(20,12,8,.72); border:1px solid rgba(255,180,100,.35);
+    border-radius:999px; padding:8px 14px; font-size:15px; font-weight:700;
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    white-space:nowrap; box-shadow:0 4px 16px rgba(0,0,0,.4);
+  }
+  #score-pill { color:#ffd97a; min-width:96px; text-align:center; }
+  #time-pill { color:#9fe8ff; min-width:76px; text-align:center; }
+  #lives-pill { color:#ff8f9f; letter-spacing:2px; }
+  #top-btns { display:flex; gap:8px; pointer-events:auto; }
+  .icon-btn {
+    width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,180,100,.4);
+    background:rgba(20,12,8,.72); color:#fff; font-size:20px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  }
+  .icon-btn:active { transform:scale(.92); background:rgba(60,35,15,.9); }
+  /* combo toast */
+  #combo {
+    position:fixed; top:76px; left:50%; transform:translateX(-50%) scale(.8); z-index:10;
+    font-size:22px; font-weight:900; color:#ffe27a; text-shadow:0 2px 12px rgba(255,140,0,.8);
+    opacity:0; transition:all .25s ease; pointer-events:none;
+  }
+  #combo.show { opacity:1; transform:translateX(-50%) scale(1.1); }
+  /* overlays */
+  .overlay {
+    position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(ellipse at 50% 35%, rgba(120,55,15,.92), rgba(10,5,3,.96));
+    padding:20px; transition:opacity .3s ease;
+  }
+  .overlay.hidden { opacity:0; pointer-events:none; visibility:hidden; }
+  .card {
+    width:min(420px, 94vw); max-height:92vh; overflow-y:auto;
+    background:linear-gradient(160deg, #2b1a10, #17100b);
+    border:1px solid rgba(255,180,100,.35); border-radius:24px; padding:28px 24px;
+    text-align:center; box-shadow:0 24px 80px rgba(0,0,0,.6);
+  }
+  .pot-emoji { font-size:64px; filter:drop-shadow(0 8px 20px rgba(255,140,0,.5)); animation:bob 2s ease-in-out infinite; }
+  @keyframes bob { 0%,100%{transform:translateY(0) rotate(-3deg)} 50%{transform:translateY(-8px) rotate(3deg)} }
+  h1 { font-size:44px; margin:8px 0 2px; color:#ffcf7a; }
+  .sub { color:#ffb27a; font-size:15px; margin-bottom:14px; letter-spacing:1px; }
+  .howto {
+    background:rgba(255,180,100,.08); border:1px dashed rgba(255,180,100,.35);
+    border-radius:14px; padding:12px; font-size:14px; line-height:1.9; color:#ffe9c9; margin-bottom:16px;
+  }
+  .howto b { color:#ffd97a; }
+  .big-btn {
+    display:block; width:100%; padding:18px; font-size:22px; font-weight:900;
+    border:none; border-radius:16px; cursor:pointer; color:#3a1c00;
+    background:linear-gradient(180deg,#ffd97a,#ff9a3c);
+    box-shadow:0 8px 24px rgba(255,150,40,.45), inset 0 1px 0 rgba(255,255,255,.6);
+    min-height:60px;
+  }
+  .big-btn:active { transform:scale(.97); }
+  .ghost-btn {
+    display:block; width:100%; margin-top:10px; padding:13px; font-size:16px; font-weight:700;
+    border-radius:14px; cursor:pointer; color:#ffd9a8;
+    background:transparent; border:1px solid rgba(255,180,100,.4);
+  }
+  .best { margin-top:12px; font-size:13px; color:#c9a37e; }
+  #final-score { font-size:52px; font-weight:900; color:#ffd97a; margin:6px 0; }
+  #final-title { font-size:30px; margin-bottom:4px; }
+  #final-sub { color:#e8c39a; font-size:15px; line-height:1.8; margin-bottom:14px; }
+  /* touch move buttons */
+  #move-btns {
+    position:fixed; bottom:calc(14px + env(safe-area-inset-bottom)); left:0; right:0; z-index:10;
+    display:flex; justify-content:space-between; padding:0 18px; pointer-events:none;
+  }
+  .move-btn {
+    width:84px; height:84px; border-radius:50%; font-size:34px; color:#fff;
+    background:rgba(255,150,50,.22); border:2px solid rgba(255,180,100,.55);
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    pointer-events:auto; cursor:pointer; touch-action:none;
+  }
+  .move-btn:active, .move-btn.held { background:rgba(255,150,50,.55); transform:scale(.93); }
+  @media (pointer:fine) { #move-btns { display:none; } }
+  #hint {
+    position:fixed; bottom:calc(110px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%);
+    z-index:9; font-size:13px; color:rgba(255,220,170,.85); background:rgba(0,0,0,.45);
+    padding:6px 14px; border-radius:999px; pointer-events:none; transition:opacity .5s;
+  }
+  #err {
+    position:fixed; bottom:8px; left:8px; right:8px; z-index:50; display:none;
+    background:#4a1414; border:1px solid #ff8080; border-radius:12px; padding:10px;
+    font-size:13px; direction:ltr; text-align:left;
+  }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<canvas id="game-canvas"></canvas>
+
+<div id="hud">
+  <div class="pill" id="score-pill">🍲 <span id="score">0</span></div>
+  <div class="pill" id="time-pill">⏱ <span id="time">60</span></div>
+  <div class="pill" id="lives-pill">❤❤❤❤❤</div>
+  <div id="top-btns">
+    <button class="icon-btn" id="mute-btn" aria-label="Mute">🔊</button>
+    <button class="icon-btn" id="pause-btn" aria-label="Pause">⏸</button>
+  </div>
+</div>
+<div id="combo"></div>
+
+<div class="overlay" id="start-overlay">
+  <div class="card">
+    <div class="pot-emoji">🍲</div>
+    <h1>سوب</h1>
+    <div class="sub">SOUP CATCH 3D • لعبة ثلاثية الأبعاد للجوال</div>
+    <div class="howto">
+      🍅 التقط <b>الخضار الطازجة</b> في القدر<br>
+      ☠️ احذر <b>الفحم الفاسد</b> — يضيّع قلب!<br>
+      👆 <b>اسحب بإصبعك</b> أو استخدم ◀ ▶ لتحريك القدر<br>
+      🏆 اجمع <b>200 نقطة</b> خلال 60 ثانية لتفوز
+    </div>
+    <button class="big-btn" id="start-btn" aria-label="Play game">🍲 ابدأ الطبخ • Start</button>
+    <button class="ghost-btn" id="how-btn">طريقة اللعب على التابلت 📱</button>
+    <div class="best">🏅 أفضل نتيجة: <span id="best-start">0</span> • Best score</div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="end-overlay">
+  <div class="card">
+    <div class="pot-emoji" id="end-emoji">🏆</div>
+    <div id="final-title">أحسنت!</div>
+    <div id="final-score">0</div>
+    <div id="final-sub"></div>
+    <button class="big-btn" id="restart-btn" aria-label="Play again">🔄 العب مجدداً • Restart</button>
+    <button class="ghost-btn" id="menu-btn">القائمة الرئيسية</button>
+    <div class="best">🏅 أفضل نتيجة: <span id="best-end">0</span></div>
+  </div>
+</div>
+
+<div id="move-btns">
+  <button class="move-btn" id="left-btn" aria-label="Move left">◀</button>
+  <button class="move-btn" id="right-btn" aria-label="Move right">▶</button>
+</div>
+<div id="hint">اسحب لتحريك القدر 🍲 Drag to move</div>
+<div id="err"></div>
+
+<script type="module">
+import * as THREE from 'three';
+
+const errBox = document.getElementById('err');
+window.addEventListener('error', e => {
+  errBox.style.display = 'block';
+  errBox.textContent = 'Error: ' + (e.message || e.error);
+});
+
+// ---------- Audio (tiny synth, no assets) ----------
+let audioCtx = null, muted = false;
+function beep(freq, dur = 0.12, type = 'sine', vol = 0.25) {
+  if (muted) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  } catch {}
+}
+const sfx = {
+  catch: () => { beep(520, .1); setTimeout(() => beep(780, .12), 70); },
+  bonus: () => { beep(660,.09); setTimeout(()=>beep(880,.09),80); setTimeout(()=>beep(1320,.15),160); },
+  bad:   () => beep(160, .3, 'sawtooth', .2),
+  miss:  () => beep(300, .18, 'triangle', .15),
+  win:   () => [523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.2),i*140)),
+  lose:  () => [400,340,280,200].forEach((f,i)=>setTimeout(()=>beep(f,.22,'triangle'),i*160)),
+};
+
+// ---------- Game state ----------
+const TARGET = 200, TIME_LIMIT = 60, MAX_LIVES = 5, GRACE_S = 3;
+const state = {
+  mode: 'menu', score: 0, lives: MAX_LIVES, time: TIME_LIMIT, elapsed: 0,
+  combo: 0, best: Number(localStorage.getItem('soup3d_best') || 0),
+  potX: 0, potVX: 0, spawnT: 0, speedMul: 1, paused: false,
+};
+document.getElementById('best-start').textContent = state.best;
+
+// ---------- Three.js scene ----------
+const canvas = document.getElementById('game-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a0f0a);
+scene.fog = new THREE.Fog(0x1a0f0a, 14, 30);
+
+const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 100);
+function layoutCamera() {
+  const a = window.innerWidth / Math.max(1, window.innerHeight);
+  camera.aspect = a;
+  // portrait phones: pull camera back/up so pot + falling items fit
+  if (a < 0.8) { camera.position.set(0, 7.2, 11.5); }
+  else if (a < 1.2) { camera.position.set(0, 6.4, 10.2); }
+  else { camera.position.set(0, 5.8, 9.2); }
+  camera.lookAt(0, 1.6, 0);
+  camera.updateProjectionMatrix();
+}
+
+scene.add(new THREE.HemisphereLight(0xffe0b3, 0x3a1f10, 0.95));
+const sun = new THREE.DirectionalLight(0xfff2dd, 1.6);
+sun.position.set(4, 10, 6);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -8; sun.shadow.camera.right = 8;
+sun.shadow.camera.top = 12; sun.shadow.camera.bottom = -4;
+scene.add(sun);
+const rim = new THREE.PointLight(0xff7a30, 12, 20);
+rim.position.set(-3, 4, -3);
+scene.add(rim);
+
+// ground: warm kitchen floor
+const ground = new THREE.Mesh(
+  new THREE.CircleGeometry(16, 48),
+  new THREE.MeshStandardMaterial({ color: 0x2e1c12, roughness: 1 })
+);
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
+scene.add(ground);
+// glowing ring under play area
+const ring = new THREE.Mesh(
+  new THREE.RingGeometry(4.6, 5.0, 64),
+  new THREE.MeshBasicMaterial({ color: 0xff8a2a, transparent: true, opacity: 0.35, side: THREE.DoubleSide })
+);
+ring.rotation.x = -Math.PI / 2; ring.position.y = 0.02;
+scene.add(ring);
+// back wall glow strips (kitchen vibe)
+for (let i = -2; i <= 2; i++) {
+  const strip = new THREE.Mesh(
+    new THREE.BoxGeometry(0.35, 5, 0.2),
+    new THREE.MeshBasicMaterial({ color: i % 2 ? 0x5a2c12 : 0x77400f })
+  );
+  strip.position.set(i * 2.4, 3.4, -7);
+  scene.add(strip);
+}
+
+// ---------- Soup pot ----------
+const pot = new THREE.Group();
+const potBody = new THREE.Mesh(
+  new THREE.CylinderGeometry(1.55, 1.25, 1.5, 32, 1, true),
+  new THREE.MeshStandardMaterial({ color: 0x23262e, roughness: 0.45, metalness: 0.75, side: THREE.DoubleSide })
+);
+potBody.castShadow = true;
+pot.add(potBody);
+const potRimMesh = new THREE.Mesh(
+  new THREE.TorusGeometry(1.55, 0.14, 16, 48),
+  new THREE.MeshStandardMaterial({ color: 0x9aa2b1, roughness: 0.3, metalness: 0.9 })
+);
+potRimMesh.rotation.x = Math.PI / 2; potRimMesh.position.y = 0.75; potRimMesh.castShadow = true;
+pot.add(potRimMesh);
+// handles
+for (const s of [-1, 1]) {
+  const h = new THREE.Mesh(
+    new THREE.TorusGeometry(0.35, 0.09, 12, 24, Math.PI),
+    new THREE.MeshStandardMaterial({ color: 0x9aa2b1, metalness: 0.9, roughness: 0.3 })
+  );
+  h.position.set(s * 1.62, 0.3, 0); h.rotation.z = s * Math.PI / 2;
+  pot.add(h);
+}
+// soup surface
+const soupMat = new THREE.MeshStandardMaterial({
+  color: 0xe8a33d, roughness: 0.25, metalness: 0.05, emissive: 0xb34a00, emissiveIntensity: 0.6,
+});
+const soup = new THREE.Mesh(new THREE.CircleGeometry(1.38, 40), soupMat);
+soup.rotation.x = -Math.PI / 2; soup.position.y = 0.62;
+pot.add(soup);
+// fire glow under pot
+const fire = new THREE.Mesh(
+  new THREE.CircleGeometry(1.1, 32),
+  new THREE.MeshBasicMaterial({ color: 0xff6a00, transparent: true, opacity: 0.5 })
+);
+fire.rotation.x = -Math.PI / 2; fire.position.y = -0.78;
+pot.add(fire);
+pot.position.set(0, 0.85, 0);
+scene.add(pot);
+
+// steam particles
+const STEAM_N = 40;
+const steamGeo = new THREE.BufferGeometry();
+const steamPos = new Float32Array(STEAM_N * 3);
+const steamVel = [];
+function resetSteam(i, randomY = false) {
+  steamPos[i*3] = pot.position.x + (Math.random()-0.5) * 1.6;
+  steamPos[i*3+1] = 1.6 + (randomY ? Math.random()*2.5 : 0);
+  steamPos[i*3+2] = (Math.random()-0.5) * 1.6;
+  steamVel[i] = 0.8 + Math.random() * 0.9;
+}
+for (let i = 0; i < STEAM_N; i++) { resetSteam(i, true); }
+steamGeo.setAttribute('position', new THREE.BufferAttribute(steamPos, 3));
+// soft round sprite so steam puffs look smooth on phones
+function steamTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(32, 32, 2, 32, 32, 30);
+  grad.addColorStop(0, 'rgba(255,240,220,0.9)');
+  grad.addColorStop(0.5, 'rgba(255,230,200,0.35)');
+  grad.addColorStop(1, 'rgba(255,230,200,0)');
+  g.fillStyle = grad; g.fillRect(0, 0, 64, 64);
+  const tex = new THREE.CanvasTexture(c);
+  return tex;
+}
+const steam = new THREE.Points(steamGeo, new THREE.PointsMaterial({
+  color: 0xffe9d0, size: 0.45, map: steamTexture(), transparent: true, opacity: 0.55, depthWrite: false,
+}));
+scene.add(steam);
+
+// ---------- Falling ingredients ----------
+const items = [];
+const GOOD = [
+  { name: 'tomato',  color: 0xe63b2e, shape: 'sphere', pts: 10 },
+  { name: 'carrot',  color: 0xff8a1e, shape: 'cone',   pts: 12 },
+  { name: 'herb',    color: 0x46c93a, shape: 'box',    pts: 10 },
+  { name: 'mushroom',color: 0xf3e6d4, shape: 'shroom', pts: 15 },
+  { name: 'spice',   color: 0xffd93b, shape: 'star',   pts: 25 },
+];
+function makeMesh(kind) {
+  const g = new THREE.Group();
+  const mat = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.5 });
+  if (kind.shape === 'sphere') {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 16), mat(kind.color));
+    m.castShadow = true; g.add(m);
+    const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.25, 8), mat(0x2f9e2f));
+    leaf.position.y = 0.5; g.add(leaf);
+  } else if (kind.shape === 'cone') {
+    const m = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.9, 14), mat(kind.color));
+    m.rotation.x = Math.PI; m.castShadow = true; g.add(m);
+  } else if (kind.shape === 'box') {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.4, 0.55), mat(kind.color));
+    m.castShadow = true; g.add(m);
+  } else if (kind.shape === 'shroom') {
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 0.4, 12), mat(0xf3e6d4));
+    stem.castShadow = true; g.add(stem);
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.4, 18, 12, 0, Math.PI*2, 0, Math.PI/2), mat(0xd23b3b));
+    cap.position.y = 0.18; cap.castShadow = true; g.add(cap);
+  } else { // star spice: octahedron
+    const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.42), new THREE.MeshStandardMaterial({
+      color: kind.color, roughness: 0.3, emissive: 0x8a6a00, emissiveIntensity: 0.5,
+    }));
+    m.castShadow = true; g.add(m);
+  }
+  return g;
+}
+function makeBadMesh() {
+  const g = new THREE.Group();
+  const m = new THREE.Mesh(
+    new THREE.BoxGeometry(0.6, 0.6, 0.6),
+    new THREE.MeshStandardMaterial({ color: 0x1c1c22, roughness: 0.9 })
+  );
+  m.castShadow = true; g.add(m);
+  const glow = new THREE.Mesh(
+    new THREE.BoxGeometry(0.64, 0.2, 0.64),
+    new THREE.MeshBasicMaterial({ color: 0xff2222 })
+  );
+  g.add(glow);
+  return g;
+}
+function spawnItem() {
+  const badChance = Math.min(0.32, 0.16 + state.score / 1200);
+  const isBad = Math.random() < badChance;
+  const kind = isBad ? null : GOOD[Math.floor(Math.random() * GOOD.length)];
+  const mesh = isBad ? makeBadMesh() : makeMesh(kind);
+  const x = (Math.random() - 0.5) * 8;
+  mesh.position.set(x, 8.5 + Math.random(), 0);
+  scene.add(mesh);
+  items.push({
+    mesh, isBad, kind,
+    vy: (1.7 + Math.random() * 1.2) * state.speedMul,
+    spin: (Math.random() - 0.5) * 3,
+  });
+}
+function splash(color = 0xffb14e) {
+  for (let i = 0; i < 6; i++) {
+    const p = new THREE.Mesh(
+      new THREE.SphereGeometry(0.09, 8, 8),
+      new THREE.MeshBasicMaterial({ color })
+    );
+    p.position.set(pot.position.x, 1.6, 0);
+    p.userData = { vx: (Math.random()-0.5)*4, vy: 3+Math.random()*3, life: 0.6 };
+    scene.add(p);
+    bursts.push(p);
+  }
+}
+const bursts = [];
+
+// ---------- HUD ----------
+const scoreEl = document.getElementById('score');
+const timeEl = document.getElementById('time');
+const livesEl = document.getElementById('lives-pill');
+const comboEl = document.getElementById('combo');
+let comboTimer = null;
+function showCombo(text) {
+  comboEl.textContent = text;
+  comboEl.classList.add('show');
+  clearTimeout(comboTimer);
+  comboTimer = setTimeout(() => comboEl.classList.remove('show'), 900);
+}
+function updateHUD() {
+  scoreEl.textContent = state.score;
+  timeEl.textContent = Math.ceil(state.time);
+  livesEl.textContent = '❤'.repeat(state.lives) + '🖤'.repeat(Math.max(0, MAX_LIVES - state.lives));
+  const t = Math.min(1, state.score / 400);
+  soupMat.color.setHSL(0.09 - t * 0.045, 0.85, 0.55 - t * 0.08);
+}
+
+// ---------- Input: drag + keys + on-screen buttons ----------
+let dragging = false, lastX = 0, keyL = false, keyR = false, btnL = false, btnR = false;
+function clientToPot(clientX) {
+  const ndc = (clientX / window.innerWidth) * 2 - 1;
+  return THREE.MathUtils.clamp(ndc * 5.2, -4.2, 4.2);
+}
+canvas.addEventListener('pointerdown', e => {
+  dragging = true; lastX = e.clientX;
+  state.potX = clientToPot(e.clientX);
+  canvas.setPointerCapture?.(e.pointerId);
+  hideHint();
+});
+canvas.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  state.potX = clientToPot(e.clientX);
+  lastX = e.clientX;
+});
+addEventListener('pointerup', () => dragging = false);
+addEventListener('pointercancel', () => dragging = false);
+addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keyL = true;
+  if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keyR = true;
+  if ((e.key === ' ' || e.key === 'Enter') && state.mode === 'menu') startGame();
+  if ((e.key === ' ' || e.key === 'Enter') && state.mode === 'over') startGame();
+  if (e.key === 'p' || e.key === 'P') togglePause();
+});
+addEventListener('keyup', e => {
+  if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keyL = false;
+  if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keyR = false;
+});
+function hold(btn, set) {
+  const on = e => { e.preventDefault(); set(true); btn.classList.add('held'); hideHint(); };
+  const off = e => { e.preventDefault(); set(false); btn.classList.remove('held'); };
+  btn.addEventListener('pointerdown', on);
+  btn.addEventListener('pointerup', off);
+  btn.addEventListener('pointercancel', off);
+  btn.addEventListener('pointerleave', off);
+}
+hold(document.getElementById('left-btn'), v => btnL = v);
+hold(document.getElementById('right-btn'), v => btnR = v);
+let hintHidden = false;
+function hideHint() {
+  if (hintHidden) return; hintHidden = true;
+  document.getElementById('hint').style.opacity = '0';
+}
+// prevent double-tap zoom / scroll on mobile
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+document.addEventListener('dblclick', e => e.preventDefault());
+document.addEventListener('gesturestart', e => e.preventDefault());
+
+// ---------- Flow ----------
+const startOverlay = document.getElementById('start-overlay');
+const endOverlay = document.getElementById('end-overlay');
+function startGame() {
+  for (const it of items) scene.remove(it.mesh);
+  items.length = 0;
+  Object.assign(state, { mode: 'play', score: 0, lives: MAX_LIVES, time: TIME_LIMIT, elapsed: 0, combo: 0, potX: 0, spawnT: 0.6, speedMul: 1, paused: false });
+  document.getElementById('pause-btn').textContent = '⏸';
+  startOverlay.classList.add('hidden');
+  endOverlay.classList.add('hidden');
+  updateHUD();
+  beep(440, .1); setTimeout(() => beep(660, .15), 100);
+  if (navigator.vibrate) navigator.vibrate(30);
+}
+function endGame(win) {
+  state.mode = 'over';
+  if (navigator.vibrate) navigator.vibrate(win ? [40, 60, 40] : 200);
+  (win ? sfx.win : sfx.lose)();
+  if (state.score > state.best) {
+    state.best = state.score;
+    localStorage.setItem('soup3d_best', state.best);
+  }
+  document.getElementById('best-end').textContent = state.best;
+  document.getElementById('best-start').textContent = state.best;
+  document.getElementById('end-emoji').textContent = win ? '🏆' : '🍲';
+  document.getElementById('final-title').textContent = win ? 'شوربة ملكية! 👑' : 'انتهت الطبخة!';
+  document.getElementById('final-score').textContent = state.score;
+  document.getElementById('final-sub').innerHTML = win
+    ? `وصلت إلى <b>${TARGET}</b> نقطة — الشوربة جاهزة! 🎉<br>Victory! The soup is perfect.`
+    : (state.lives <= 0
+      ? `نفدت القلوب… حاول مجدداً! 🖤<br>Out of hearts — one more pot?`
+      : `الوقت انتهى! كنت تحتاج ${TARGET} نقطة.<br>Time's up — target was ${TARGET}.`);
+  setTimeout(() => endOverlay.classList.remove('hidden'), 600);
+}
+function togglePause() {
+  if (state.mode !== 'play') return;
+  state.paused = !state.paused;
+  document.getElementById('pause-btn').textContent = state.paused ? '▶' : '⏸';
+}
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('restart-btn').addEventListener('click', startGame);
+document.getElementById('menu-btn').addEventListener('click', () => {
+  state.mode = 'menu';
+  endOverlay.classList.add('hidden');
+  startOverlay.classList.remove('hidden');
+});
+document.getElementById('pause-btn').addEventListener('click', togglePause);
+document.getElementById('mute-btn').addEventListener('click', e => {
+  muted = !muted;
+  e.currentTarget.textContent = muted ? '🔇' : '🔊';
+});
+document.getElementById('how-btn').addEventListener('click', () => {
+  showCombo('👆 اسحب بإصبعك لتحريك القدر!');
+  beep(600, .12);
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && state.mode === 'play' && !state.paused) togglePause();
+});
+
+// ---------- Loop ----------
+function resize() {
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+  layoutCamera();
+}
+addEventListener('resize', resize);
+addEventListener('orientationchange', () => setTimeout(resize, 200));
+resize();
+layoutCamera();
+
+const clock = new THREE.Clock();
+function tick() {
+  requestAnimationFrame(tick);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime;
+
+  // idle animation always
+  fire.material.opacity = 0.4 + Math.sin(t * 9) * 0.15;
+  fire.scale.setScalar(1 + Math.sin(t * 7) * 0.06);
+  ring.material.opacity = 0.25 + Math.sin(t * 2) * 0.1;
+  soup.position.y = 0.62 + Math.sin(t * 3) * 0.02;
+
+  // steam always rises
+  const pos = steamGeo.attributes.position.array;
+  for (let i = 0; i < STEAM_N; i++) {
+    pos[i*3+1] += steamVel[i] * dt;
+    pos[i*3] += Math.sin(t * 2 + i) * dt * 0.3;
+    if (pos[i*3+1] > 4.5) resetSteam(i);
+    steamPos[i*3] = pos[i*3]; steamPos[i*3+1] = pos[i*3+1]; steamPos[i*3+2] = pos[i*3+2];
+  }
+  steamGeo.attributes.position.needsUpdate = true;
+
+  // splash bursts
+  for (let i = bursts.length - 1; i >= 0; i--) {
+    const p = bursts[i];
+    p.userData.life -= dt;
+    p.userData.vy -= 9 * dt;
+    p.position.x += p.userData.vx * dt;
+    p.position.y += p.userData.vy * dt;
+    p.scale.setScalar(Math.max(0.01, p.userData.life * 2));
+    if (p.userData.life <= 0 || p.position.y < 0.4) { scene.remove(p); bursts.splice(i, 1); }
+  }
+
+  if (state.mode === 'play' && !state.paused) {
+    // timer + difficulty
+    state.time -= dt;
+    state.elapsed += dt;
+    state.speedMul = 1 + (TIME_LIMIT - state.time) / TIME_LIMIT * 0.9;
+    if (state.time <= 0) { state.time = 0; updateHUD(); endGame(state.score >= TARGET); }
+    else if (state.score >= TARGET) { updateHUD(); endGame(true); }
+
+    // movement: drag sets potX directly; keys/buttons nudge
+    const spd = 7 * dt;
+    if (keyL || btnL) state.potX -= spd;
+    if (keyR || btnR) state.potX += spd;
+    // Arabic RTL: movement mirrored visually? keep physical: left decreases X.
+    state.potX = THREE.MathUtils.clamp(state.potX, -4.2, 4.2);
+    pot.position.x += (state.potX - pot.position.x) * Math.min(1, dt * 12);
+    pot.rotation.z = THREE.MathUtils.clamp((pot.position.x - state.potX) * 0.25, -0.3, 0.3);
+    camera.position.x += (pot.position.x * 0.25 - camera.position.x) * dt * 3;
+    camera.lookAt(pot.position.x * 0.3, 1.6, 0);
+
+    // spawn
+    state.spawnT -= dt;
+    if (state.spawnT <= 0) {
+      spawnItem();
+      state.spawnT = Math.max(0.42, 1.05 - (TIME_LIMIT - state.time) * 0.009) * (0.7 + Math.random() * 0.6);
+    }
+
+    // fall + collide
+    for (let i = items.length - 1; i >= 0; i--) {
+      const it = items[i];
+      it.mesh.position.y -= it.vy * dt;
+      it.mesh.rotation.y += it.spin * dt;
+      it.mesh.rotation.x += it.spin * 0.6 * dt;
+      const dx = Math.abs(it.mesh.position.x - pot.position.x);
+      // catch zone: soup mouth
+      if (it.mesh.position.y <= 1.75 && it.mesh.position.y >= 0.9 && dx < 1.45) {
+        scene.remove(it.mesh); items.splice(i, 1);
+        if (it.isBad) {
+          state.lives--; state.combo = 0;
+          sfx.bad(); splash(0x333333);
+          showCombo('☠️ فحم فاسد!');
+          if (navigator.vibrate) navigator.vibrate(120);
+          if (state.lives <= 0) { updateHUD(); endGame(false); }
+        } else {
+          state.combo++;
+          const gained = it.kind.pts + Math.min(20, state.combo * 2);
+          state.score += gained;
+          (it.kind.pts >= 20 ? sfx.bonus : sfx.catch)();
+          splash(it.kind.color);
+          if (state.combo >= 3) showCombo(`🔥 كومبو ×${state.combo}! +${gained}`);
+          if (navigator.vibrate) navigator.vibrate(15);
+          if (state.score >= TARGET) { updateHUD(); endGame(true); }
+        }
+        updateHUD();
+        continue;
+      }
+      // fell past pot (grace period at start costs no life)
+      if (it.mesh.position.y < 0.1) {
+        scene.remove(it.mesh); items.splice(i, 1);
+        if (!it.isBad) {
+          state.combo = 0;
+          if (state.elapsed > GRACE_S) {
+            state.lives--;
+            sfx.miss();
+            showCombo('💔 فاتتك خضار!');
+            if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+            if (state.lives <= 0) { updateHUD(); endGame(false); }
+          }
+          updateHUD();
+        }
+      }
+    }
+    updateHUD();
+  } else {
+    // menu idle: gentle pot sway
+    pot.rotation.z = Math.sin(t * 1.5) * 0.05;
+    if (state.mode === 'menu' && Math.random() < dt * 1.2 && items.length < 6) spawnItem();
+    for (let i = items.length - 1; i >= 0; i--) {
+      const it = items[i];
+      it.mesh.position.y -= 1.5 * dt;
+      it.mesh.rotation.y += dt;
+      if (it.mesh.position.y < 0.1) { scene.remove(it.mesh); items.splice(i, 1); }
+    }
+  }
+
+  renderer.render(scene, camera);
+}
+updateHUD();
+tick();
+
+// expose for automated checks
+window.__soup3d = { state, startGame, THREE };
+</script>
+</body>
+</html>
