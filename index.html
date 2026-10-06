@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0f1e">
+<title>أبطال العراق 🇮🇶 | معركة الكرامة — لعبة إطلاق نار 3D</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇮🇶</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<div id="game-root"></div>
+
+<!-- شاشة التحميل -->
+<div id="loading-screen" class="screen active">
+  <div class="flag-bar"><span class="f-red"></span><span class="f-white">الله أكبر</span><span class="f-black"></span><span class="f-green"></span></div>
+  <div class="load-box">
+    <div class="logo">🇮🇶</div>
+    <h1>أبطال العراق</h1>
+    <h2>معركة الكرامة</h2>
+    <div class="load-bar"><div id="load-fill"></div></div>
+    <p id="load-text">جاري تجهيز ساحة المعركة...</p>
+  </div>
+</div>
+
+<!-- القائمة الرئيسية -->
+<div id="main-menu" class="screen">
+  <div class="menu-bg"></div>
+  <div class="menu-content">
+    <div class="iraq-badge">🇮🇶 الجيش العراقي الباسل</div>
+    <h1 class="game-title">أبطال العراق</h1>
+    <p class="game-sub">معركة الكرامة — لعبة إطلاق نار ثلاثية الأبعاد</p>
+    <div class="hero-stats">
+      <div class="hstat"><span>🏅</span><b id="menu-best">0</b><small>أفضل نتيجة</small></div>
+      <div class="hstat"><span>🎖️</span><b id="menu-medals">0/5</b><small>الأوسمة</small></div>
+      <div class="hstat"><span>⚔️</span><b id="menu-kills">0</b><small>إصابات</small></div>
+    </div>
+    <div class="menu-buttons">
+      <button id="btn-start" class="btn primary big">▶️ ابدأ المعركة</button>
+      <button id="btn-missions" class="btn">🗺️ المهام <small id="mission-progress-label"></small></button>
+      <button id="btn-how" class="btn">📖 كيف تلعب</button>
+      <button id="btn-settings" class="btn">⚙️ الإعدادات</button>
+      <button id="btn-sound-top" class="btn small">🔊 الصوت</button>
+    </div>
+    <p class="dedication">إهداء إلى أبطال الجيش العراقي والقوات الأمنية والحشد الشعبي — رحم الله الشهداء 🇮🇶</p>
+  </div>
+</div>
+
+<!-- اختيار المهمة -->
+<div id="missions-screen" class="screen">
+  <div class="panel">
+    <h2>🗺️ اختر المهمة</h2>
+    <div id="mission-grid"></div>
+    <button class="btn back-btn" data-back="main-menu">رجوع</button>
+  </div>
+</div>
+
+<!-- كيف تلعب -->
+<div id="how-screen" class="screen">
+  <div class="panel">
+    <h2>📖 كيف تلعب</h2>
+    <div class="how-grid">
+      <div><b>🖥️ كمبيوتر</b><p>WASD أو الأسهم للحركة • الفأرة للتصويب • زر أيسر إطلاق • R إعادة تحميل • G قنبلة • Shift ركض • P إيقاف</p></div>
+      <div><b>📱 هاتف / تابلت</b><p>عصا يسرى للحركة • اسحب يمين الشاشة للتصويب • زر 🔥 إطلاق • زر 🎯 تصويب دقيق • زر ⟳ تحميل • زر 💣 قنبلة</p></div>
+      <div><b>🎯 الهدف</b><p>اقضِ على كل الإرهابيين في الموجات، احمِ نفسك، اجمع الإسعافات والذخيرة، وأكمل المهام الخمس لتحرير العراق!</p></div>
+    </div>
+    <button class="btn back-btn" data-back="main-menu">رجوع</button>
+  </div>
+</div>
+
+<!-- الإعدادات -->
+<div id="settings-screen" class="screen">
+  <div class="panel">
+    <h2>⚙️ الإعدادات</h2>
+    <label>جودة الرسوم <select id="set-quality"><option value="low">منخفضة (للأجهزة الضعيفة)</option><option value="medium" selected>متوسطة</option><option value="high">عالية (أسطورية 🌟)</option></select></label>
+    <label>الحساسية <input id="set-sens" type="range" min="0.3" max="3" step="0.1" value="1"></label>
+    <label><input id="set-sound" type="checkbox" checked> تفعيل الصوت</label>
+    <label><input id="set-shake" type="checkbox" checked> اهتزاز الشاشة</label>
+    <button class="btn back-btn" data-back="main-menu">حفظ ورجوع</button>
+  </div>
+</div>
+
+<!-- موجز المهمة -->
+<div id="brief-screen" class="screen">
+  <div class="panel">
+    <div class="iraq-badge">🇮🇶 أمر عمليات</div>
+    <h2 id="brief-title"></h2>
+    <p id="brief-desc"></p>
+    <p id="brief-obj" class="obj"></p>
+    <button id="btn-deploy" class="btn primary big">🪖 انطلق إلى المعركة!</button>
+  </div>
+</div>
+
+<!-- واجهة المعركة HUD -->
+<div id="hud" class="hidden">
+  <div id="hud-top">
+    <div class="hud-card right">
+      <div id="hud-mission">المهمة 1</div>
+      <div id="hud-wave">الموجة 1/3</div>
+      <div id="hud-enemies">☠️ المتبقي: 0</div>
+    </div>
+    <div class="hud-card center">
+      <div id="hud-score">النقاط: 0</div>
+      <div id="crosshair">✛</div>
+      <div id="hitmarker">✕</div>
+      <div id="killfeed"></div>
+    </div>
+    <div class="hud-card left">
+      <button id="btn-pause" class="icon-btn">⏸️</button>
+      <button id="btn-mute" class="icon-btn">🔊</button>
+    </div>
+  </div>
+  <div id="damage-vignette"></div>
+  <div id="heal-flash"></div>
+  <div id="hud-bottom">
+    <div class="hud-card">
+      <div class="bar-label">❤️ الصحة <span id="hp-num">100</span></div>
+      <div class="bar"><div id="hp-fill"></div></div>
+      <div class="bar-label">🛡️ الدرع <span id="ar-num">0</span></div>
+      <div class="bar armor"><div id="ar-fill"></div></div>
+    </div>
+    <div class="hud-card ammo-card">
+      <div id="ammo">🔫 30 / 90</div>
+      <div id="grenades">💣 × 3</div>
+      <div id="reload-hint">اضغط R للتحميل</div>
+    </div>
+  </div>
+  <canvas id="minimap" width="140" height="140"></canvas>
+  <div id="mission-banner"></div>
+  <div id="wave-banner"></div>
+
+  <!-- تحكم اللمس -->
+  <div id="touch-ui" class="hidden">
+    <div id="joystick"><div id="stick"></div></div>
+    <div id="touch-buttons">
+      <button id="t-fire" class="tbtn fire">🔥</button>
+      <button id="t-ads" class="tbtn">🎯</button>
+      <button id="t-reload" class="tbtn">⟳</button>
+      <button id="t-grenade" class="tbtn">💣</button>
+      <button id="t-jump" class="tbtn">⬆️</button>
+    </div>
+  </div>
+</div>
+
+<!-- إيقاف مؤقت -->
+<div id="pause-screen" class="screen">
+  <div class="panel">
+    <h2>⏸️ إيقاف مؤقت</h2>
+    <p>استرح يا بطل، المعركة بانتظارك</p>
+    <button id="btn-resume" class="btn primary">استئناف ▶️</button>
+    <button id="btn-restart" class="btn">إعادة المهمة 🔄</button>
+    <button id="btn-quit" class="btn">القائمة الرئيسية 🏠</button>
+  </div>
+</div>
+
+<!-- نهاية -->
+<div id="end-screen" class="screen">
+  <div class="panel">
+    <h2 id="end-title">🏆 النصر!</h2>
+    <div id="end-medal" class="medal"></div>
+    <p id="end-stats"></p>
+    <div id="end-buttons">
+      <button id="btn-next" class="btn primary">المهمة التالية ⏭️</button>
+      <button id="btn-replay" class="btn">إعادة 🔄</button>
+      <button id="btn-home" class="btn">القائمة 🏠</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script type="module" src="game.js"></script>
+</body>
+</html>
